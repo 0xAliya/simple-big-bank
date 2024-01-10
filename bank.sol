@@ -4,9 +4,9 @@ pragma solidity >=0.7.0 <0.9.0;
 contract Bank {
     address public owner;
 
-    mapping(address => uint) public balances;
+    mapping(address => uint256) private balances;
 
-    address[3] public top3Adresses;
+    address[3] private top3Adresses;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function.");
@@ -19,22 +19,24 @@ contract Bank {
 
     receive() external payable {
         balances[msg.sender] += msg.value;
+        updateTop3();
+    }
 
-        if (top3Adresses.length < 3) {
-            top3Adresses[top3Adresses.length] = msg.sender;
-        } else {
-            uint lowestIndex = 0;
-            for (uint i = 1; i < 3; i++) {
-                if (
-                    balances[top3Adresses[i]] <
-                    balances[top3Adresses[lowestIndex]]
-                ) {
-                    lowestIndex = i;
-                }
+    function updateTop3() private {
+        uint8 insertIndex;
+
+        for (insertIndex = 0; insertIndex < 3; insertIndex++) {
+            if (balances[msg.sender] > balances[top3Adresses[insertIndex]]) {
+                break;
             }
-            if (balances[msg.sender] > balances[top3Adresses[lowestIndex]]) {
-                top3Adresses[lowestIndex] = msg.sender;
+        }
+
+        if (insertIndex != 3) {
+            for (uint8 i = 2; i > insertIndex; i--) {
+                top3Adresses[i] = top3Adresses[i - 1];
             }
+
+            top3Adresses[insertIndex] = msg.sender;
         }
     }
 
@@ -43,7 +45,7 @@ contract Bank {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function getBalance(address x) public view returns (uint) {
+    function getBalance(address x) public view returns (uint256) {
         return balances[x];
     }
 
