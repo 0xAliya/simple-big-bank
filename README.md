@@ -1,3 +1,5 @@
-# Simple Bank
+# Big Bank
 
-Goerli Testnet Contract Address 0xc4b99465Fbf950323b55D831659a3d6ddD48d320
+Goerli Testnet BigBank Contract Address 0x17bf54Bac7670D7fC374c19B6C8B2b6c839A9D80
+
+Goerli Testnet Owner Contract Address 0xC50000f65faE6cbD70049C6207D248a75713bc0c

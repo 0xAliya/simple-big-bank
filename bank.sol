@@ -4,9 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 contract Bank {
     address public owner;
 
-    mapping(address => uint256) private balances;
-
-    address[3] private top3Adresses;
+    mapping(address => uint256) internal balances;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function.");
@@ -18,38 +16,55 @@ contract Bank {
     }
 
     receive() external payable {
-        balances[msg.sender] += msg.value;
-        updateTop3();
+        deposit();
     }
 
-    function updateTop3() private {
-        uint8 insertIndex;
-
-        for (insertIndex = 0; insertIndex < 3; insertIndex++) {
-            if (balances[msg.sender] > balances[top3Adresses[insertIndex]]) {
-                break;
-            }
-        }
-
-        if (insertIndex != 3) {
-            for (uint8 i = 2; i > insertIndex; i--) {
-                top3Adresses[i] = top3Adresses[i - 1];
-            }
-
-            top3Adresses[insertIndex] = msg.sender;
-        }
+    function deposit() public payable virtual {
+        balances[msg.sender] += msg.value;
     }
 
     function withdraw() public onlyOwner {
         require(address(this).balance > 0, "Bank balance is zero.");
+        (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
+        require(success, "Withdraw call failed.");
+    }
+}
+
+contract BigBank is Bank {
+    modifier bigUserOnly() {
+        require(msg.value >= 1 ether, "You need to deposit at least 1 ether.");
+        _;
+    }
+
+    function deposit() public payable override bigUserOnly {
+        balances[msg.sender] += msg.value;
+    }
+
+    function changeOwner(address newOwner) public onlyOwner {
+        owner = newOwner;
+    }
+}
+
+interface IBigBank {
+    function withdraw() external;
+}
+
+contract Owner {
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function.");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    receive() external payable {}
+
+    function withdraw(address _bigBank) public onlyOwner {
+        IBigBank(_bigBank).withdraw();
         payable(msg.sender).transfer(address(this).balance);
-    }
-
-    function getBalance(address x) public view returns (uint256) {
-        return balances[x];
-    }
-
-    function getTop3() public view returns (address[3] memory) {
-        return top3Adresses;
     }
 }
